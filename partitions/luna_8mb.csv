@@ -1,0 +1,12 @@
+# Name,    Type, SubType,  Offset,    Size,       Flags
+nvs,       data, nvs,      0x9000,    0x5000,
+otadata,   data, ota,      0xE000,    0x2000,
+boot,      app,  factory,  0x10000,   0x140000,
+luna,      app,  ota_0,    0x150000,  0x400000,
+storage,   data, spiffs,   0x550000,  0x2B0000
+     
+
+
+# boot: 1.25 MB
+# luna: 4 MB
+# fs: ~ 2.7 MB
