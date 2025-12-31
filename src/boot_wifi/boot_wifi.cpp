@@ -38,7 +38,7 @@ bool bootWifiConnectFromNvs() {
     Serial.print(F("[WIFI] Connecting to Wi-Fi network: "));
     Serial.println(creds.ssid);
 
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP_STA);
     g_wifiState = BootWifiState::STA_CONNECTING;
 
     WiFi.begin(creds.ssid, creds.psw);

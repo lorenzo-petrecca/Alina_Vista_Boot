@@ -5,6 +5,7 @@
 #include "font/mono_5x8px/meta.h"
 #include "boot_wifi/boot_wifi.hpp"
 #include "config.hpp"
+#include "boot_web_server/boot_web_server.hpp"
 
 
 // ACTION TABS
@@ -61,6 +62,7 @@ void configRender () {
 
     // Tentativo di creazione Access Point
     if (bootWifiStartAp(WIFI_AP_SSID, WIFI_AP_PSW)) {
+        bootWebStart(); // avvio web server
         lcd.clear();
         // Stampa AP riuscito
         const char* apOk = "AP attivo";
@@ -108,9 +110,9 @@ void onConfig () {
 
 
 // ROOT    ——————————————————————————————————————————————————————————————————————————
-static const MenuItem BackItem("Indietro", onBack, nullptr, 0);                 // Voce: Indietro
-static const MenuItem ConnectItem("Connetti", onConnect, nullptr, 0);                 // Voce: Indietro
-static const MenuItem ConfItem("Configura", onConfig, nullptr, 0);                 // Voce: Indietro
+static const MenuItem BackItem("Indietro", onBack, nullptr, 0);               
+static const MenuItem ConnectItem("Connetti", onConnect, nullptr, 0);               
+static const MenuItem ConfItem("Configura", onConfig, nullptr, 0);               
 
 
 // array delle voci di "WiFi tab"

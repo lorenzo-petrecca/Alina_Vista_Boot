@@ -40,3 +40,8 @@ bool bootNvsGetResource (const char* nvsNamespace, NvsType type, const char* key
 // - bufferSize: dimensione del buffer, incluso il terminatore
 // Ritorna true se letta con successo, false se chiave mancante/errore o buffer troppo piccolo.
 bool bootNvsGetString(const char* nvsNamespace, const char* key, char* buffer, size_t bufferSize);
+
+
+// Salva una stringa in NVS: namespace + key
+// Ritorna true se write + commit ok
+bool bootNvsSetString(const char* key, const char* value);

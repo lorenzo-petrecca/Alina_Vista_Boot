@@ -146,3 +146,19 @@ bool bootNvsGetString (const char* nvsNamespace, const char* key, char* buffer, 
     nvs_close(handle);
     return (err == ESP_OK);
 }
+
+
+
+bool bootNvsSetString(const char* key, const char* value) {
+    if (!key || !value) return false;
+
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(BOOT_NVS_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) return false;
+
+    err = nvs_set_str(handle, key, value);
+    if (err != ESP_OK) err = nvs_commit(handle);
+
+    nvs_close(handle);
+    return (err == ESP_OK);
+}

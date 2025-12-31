@@ -5,6 +5,10 @@
 #include "boot_display_driver/boot_display_driver.hpp"
 #include "boot_ui/boot_ui.hpp"
 #include "config.hpp"
+#include "boot_startup/boot_startup.hpp"
+#include "boot_wifi/boot_wifi.hpp"
+#include "boot_web_server/boot_web_server.hpp"
+
 
 static void decideInitialState() {
     // Se la chiave non esiste ancora, consideriamo default = true → resta in Boot
@@ -63,7 +67,8 @@ void setup() {
     
       case BootState::START_APP:
         Serial.println("[BOOT] Boot application firmware (partition \"luna\")");
-        // Qui in futuro: selezione partizione + esp_restart()
+        bootStartApp();
+        setBootState(BootState::ERROR); // fallback se dovesse fallire
         break;
     
       case BootState::ERROR:
@@ -76,9 +81,13 @@ void setup() {
         displayBootMenu();
         break;
     }
+
+    // inizializza il modulo wifi
+    bootWifiInit();
 }
 
 void loop() {
     auto &controller = mController_getInstance();
     controller.update();
+    bootWebRun();
 }

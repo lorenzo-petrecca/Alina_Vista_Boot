@@ -1,7 +1,6 @@
 #include "boot_versions.hpp"
 #include "boot_wifi/boot_wifi.hpp"
-#include <WiFi.h>
-#include <HTTPClient.h>
+#include "boot_http/boot_http.hpp"
 #include <ArduinoJson.h>
 
 
@@ -21,19 +20,26 @@ bool bootFetchRemoteVersions (const char* manifestUrl, RemoteVersion* out, uint8
     Serial.println("\"");
 
     HTTPClient http;
-    http.begin(manifestUrl);
-    int code = http.GET();
+
+    int code = bootHttpGet(http, manifestUrl);
 
     if (code != HTTP_CODE_OK) {
         Serial.print(F("[BOOT] http error: "));
         Serial.println(code);
-        http.end();
+        bootHttpEnd(http);
         return false;
     }
 
+    // Payload
     String payload = http.getString();
-    http.end();
+    bootHttpEnd(http);
 
+    if (payload.length() == 0) {
+        Serial.println(F("[BOOT] Empty manifest payload."));
+        return false;
+    }
+
+    // JSON parse
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, payload);
 

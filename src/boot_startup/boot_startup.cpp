@@ -13,7 +13,7 @@ bool bootStartApp () {
   // Trova la partizione app di tipo ota_0 con name "luna"
   const esp_partition_t* appPart = esp_partition_find_first(
       ESP_PARTITION_TYPE_APP,
-      ESP_PARTITION_SUBTYPE_APP_OTA_0,
+      ESP_PARTITION_SUBTYPE_ANY,
       APP_PARTITION_NAME    // puoi mettere nullptr se vuoi solo type/subtype
   );
 
