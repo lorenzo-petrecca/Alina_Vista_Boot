@@ -21,14 +21,11 @@ static bool hexToNibble(char c, uint8_t &out) {
 
 static bool parseHex64ToBytes(const char *hex64, uint8_t out32[32]) {
     if (!hex64) return false;
-    // deve essere esattamente 64 hex
+    // deve essere esattamente 64 hex + terminatore
     for (int i = 0; i < 64; i++) {
         if (hex64[i] == '\0') return false;
     }
-    if (hex64[64] != '\0') {
-        // se è più lunga, accettiamo comunque se i primi 64 sono validi
-        // ma idealmente dovrebbe essere terminata.
-    }
+    if (hex64[64] != '\0') return false;
 
     for (int i = 0; i < 32; i++) {
         uint8_t hi, lo;
@@ -42,6 +39,21 @@ static bool parseHex64ToBytes(const char *hex64, uint8_t out32[32]) {
 
 
 bool bootOtaInstallRemote(const RemoteVersion& v) {
+    // se per QUALSIASI motivo arriva una versione senza SHA, OTA non parte
+    if (strlen(v.sha) != 64) {
+        Serial.println(F("[BOOT][OTA] Blocked: SHA256 missing"));
+
+        auto &lcd = display_getInstance();
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("OTA BLOCKED");
+        lcd.setCursor(0, 1);
+        lcd.print("SHA missing");
+        delay(2000);
+
+        return false;
+    }
+
     auto &lcd = display_getInstance();
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -70,6 +82,7 @@ bool bootOtaInstallRemote(const RemoteVersion& v) {
         delay(2000);
         return false;
     }
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); // nel caso in cui github faccia redirect. Altrimenti fallirebbe l'OTA anche se l'url è giusto.
 
     int httpCode = http.GET();
     if (httpCode != HTTP_CODE_OK) {
@@ -104,21 +117,21 @@ bool bootOtaInstallRemote(const RemoteVersion& v) {
         return false;
     }
 
-    // 4. Setup SHA256 (solo se v.sha sembra valido)
-    bool verifySha = false;
+    // 4. Setup SHA256 (SHA obbligatorio, quindi parsing strict)
     uint8_t expectedSha[32] = {0};
-    if (v.sha[0] != '\0') {
-        // verifica veloce: se è lungo 64 hex allora lo abilitiamo
-        if (strlen(v.sha) >= 64 && parseHex64ToBytes(v.sha, expectedSha)) {
-            verifySha = true;
-        }
+    if (!parseHex64ToBytes(v.sha, expectedSha)) {
+        lcd.setCursor(0, 5);
+        lcd.print("Bad SHA hex");
+        esp_ota_end(ota_handle);
+        bootHttpEnd(http);
+        delay(2000);
+        return false;
     }
 
     mbedtls_sha256_context shaCtx;
-    if (verifySha) {
-        mbedtls_sha256_init(&shaCtx);
-        mbedtls_sha256_starts_ret(&shaCtx, 0);
-    }
+    mbedtls_sha256_init(&shaCtx);
+    mbedtls_sha256_starts_ret(&shaCtx, 0);
+
 
     // 5. Stream + esp_ota_write
     WiFiClient &stream = http.getStream();
@@ -142,6 +155,12 @@ bool bootOtaInstallRemote(const RemoteVersion& v) {
                 err = ESP_ERR_TIMEOUT;
                 break;
             }
+
+            // se length sconosciuta e il server ha chiuso lo stream, fine download
+            if (!lengthKnown && !stream.connected()) {
+                break;
+            }
+
             delay(10);
             continue;
         }
@@ -158,9 +177,7 @@ bool bootOtaInstallRemote(const RemoteVersion& v) {
         lastDataMs = millis();
 
         // sha update
-        if (verifySha) {
-            mbedtls_sha256_update_ret(&shaCtx, buf, r);
-        }
+        mbedtls_sha256_update_ret(&shaCtx, buf, r);
 
         err = esp_ota_write(ota_handle, buf, r);
         if (err != ESP_OK) break;
@@ -183,6 +200,7 @@ bool bootOtaInstallRemote(const RemoteVersion& v) {
         lcd.setCursor(0,5);
         lcd.print("OTA write err");
         esp_ota_end(ota_handle);
+        mbedtls_sha256_free(&shaCtx);
         delay(2000);
         return false;
     }
@@ -191,25 +209,25 @@ bool bootOtaInstallRemote(const RemoteVersion& v) {
         lcd.setCursor(0,5);
         lcd.print("OTA size err");
         esp_ota_end(ota_handle);
+        mbedtls_sha256_free(&shaCtx);
         delay(2000);
         return false;
     }
 
 
     // 7. SHA256 final check
-    if (verifySha) {
-        uint8_t gotSha[32];
-        mbedtls_sha256_finish_ret(&shaCtx, gotSha);
-        mbedtls_sha256_free(&shaCtx);
-
-        if (memcmp(gotSha, expectedSha, 32) != 0) {
-            lcd.setCursor(0, 5);
-            lcd.print("SHA mismatch");
-            esp_ota_end(ota_handle);
-            delay(2500);
-            return false;
-        }
+    uint8_t gotSha[32];
+    mbedtls_sha256_finish_ret(&shaCtx, gotSha);
+    mbedtls_sha256_free(&shaCtx);
+    
+    if (memcmp(gotSha, expectedSha, 32) != 0) {
+        lcd.setCursor(0, 5);
+        lcd.print("SHA mismatch");
+        esp_ota_end(ota_handle);
+        delay(2500);
+        return false;
     }
+
 
 
     // 8. OTA end

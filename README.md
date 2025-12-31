@@ -70,7 +70,7 @@ The boot firmware installs and boots the main firmware based on metadata provide
 Each application release declares:
 - target flash size
 - minimum required boot version
-- SHA256 checksum (optional but recommended)
+- SHA256 checksum
 
 ---
 

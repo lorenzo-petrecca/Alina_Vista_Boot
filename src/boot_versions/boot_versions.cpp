@@ -99,8 +99,23 @@ bool bootFetchRemoteVersions (const char* manifestUrl, RemoteVersion* out, uint8
             strncpy(dst.url, urlStr, sizeof(dst.url));   // url
             dst.url[sizeof(dst.url)-1] = '\0';
 
+            // sha2556
+            size_t shaLen = strlen(shaStr);
+            auto isHex = [](char c) {
+                return (c >= '0' && c <= '9') ||
+                (c >= 'a' && c <= 'f') ||
+                (c >= 'A' && c <= 'F');
+            };
+            bool shaOk = (shaLen == 64);
+            for (size_t i = 0; shaOk && i < 64; i++) {
+                shaOk = isHex(shaStr[i]);
+            }
+            if (!shaOk) {
+                Serial.println(F("[BOOT] Skipping version: missing or invalid SHA256"));
+                continue;   // <-- Skippa la versione
+            }
             strncpy(dst.sha, shaStr, sizeof(dst.sha));   // sha256
-            dst.sha[sizeof(dst.sha)-1] = '\0';
+            dst.sha[sizeof(dst.sha) - 1] = '\0';
 
             dst.minBootBuild = minBootB;    // min_boot_build
 

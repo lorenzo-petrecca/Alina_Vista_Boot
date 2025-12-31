@@ -12,11 +12,13 @@
 // ATTENZIONE: mantieni esattamente le righe BEGIN/END e il formato PEM.
 //
 
+#ifndef BOOT_HTTP_INSECURE
 static const char *rootCACert = R"EOF(
 -----BEGIN CERTIFICATE-----
 REPLACE_WITH_REAL_ROOT_CA_PEM
 -----END CERTIFICATE-----
 )EOF";
+#endif
 
 // Se vuoi una build "insicure" per sviluppo, puoi abilitare questa define
 // da build_flags in platformio.ini, es:
@@ -61,7 +63,16 @@ bool bootHttpBegin (HTTPClient &http, const char *url) {
 
 int bootHttpGet (HTTPClient &http, const char *url) {
     if (!bootHttpBegin(http, url)) {
-        return -1; // ritorna errore
+        Serial.println(F("[BOOT][HTTP] begin failed"));
+        return -1;
     }
-    return http.GET();
+
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
+    int code = http.GET();
+    if (code <= 0) {
+        Serial.print(F("[BOOT][HTTP] GET failed: "));
+        Serial.println(http.errorToString(code));
+    }
+    return code;
 }
