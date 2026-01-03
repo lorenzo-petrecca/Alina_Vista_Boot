@@ -3,10 +3,10 @@
 #include <stdint.h>
 
 static constexpr const char* BOOT_NAME              = "Alina-Vista Boot";
-static constexpr const char* BOOT_VERSION           = "0.1.0";
-static constexpr const uint32_t BOOT_VERSION_BUILD  = 100;
+static constexpr const char* BOOT_VERSION           = "0.2.0";
+static constexpr const uint32_t BOOT_VERSION_BUILD  = 200;
 static constexpr const char* BOOT_AUTH              = "Lorenzo Petrecca";
-static constexpr const char* BOOT_DATE              = "2025/12";
+static constexpr const char* BOOT_DATE              = "2026/01";
 
 static constexpr const char* APP_PARTITION_NAME = "luna";
 
