@@ -51,6 +51,7 @@ static void handleSave () {
     sendNoCache();
     
     if (!g_server.hasArg("plain")) {
+        Serial.println("[WEB] Missing body");
         g_server.send(400, "text/plain", "Missing body");
         return;
     }
@@ -58,6 +59,7 @@ static void handleSave () {
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, g_server.arg("plain"));
     if (err) {
+        Serial.println("[WEB] Bad JSON");
         g_server.send(400, "text/plain", "Bad JSON");
         return;
     }
@@ -66,21 +68,25 @@ static void handleSave () {
     const char *pass = doc["pass"] | "";
 
     if (ssid[0] == '\0') {
+        Serial.println("[WEB] SSID empty");
         g_server.send(400, "text/plain", "SSID empty");
         return;
     }
 
     // salvataggio in NVS
-    bool okSSid = bootNvsSetString(WIFI_KEY_SSID, ssid);
+    bool okSsid = bootNvsSetString(WIFI_KEY_SSID, ssid);
     bool okPass = bootNvsSetString(WIFI_KEY_PSW, pass);
+    Serial.printf("[WEB] Save NVS: ssid=%d pass=%d\n", okSsid, okPass);
 
-    if (!okSSid || !okPass) {
+    if (!okSsid || !okPass) {
         g_server.send(400, "text/plain", "Error while saving");
         return;
     }
-
+    
     // tenta connessione STA
+    Serial.println("[WEB] Connecting STA from NVS...");
     bool connection = bootWifiConnectFromNvs();
+    Serial.printf("[WEB] STA connect result: %d\n", connection);
 
     if (!connection) {
         g_server.send(400, "text/plain", "Unable to connect to the network");

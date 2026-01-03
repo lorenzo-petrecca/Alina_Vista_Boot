@@ -40,6 +40,11 @@ void setup() {
     pinMode(HOLD_ON, OUTPUT);
     digitalWrite(HOLD_ON, HIGH);
 
+    pinMode(D_EN_CTR, OUTPUT);
+    pinMode(D_BOOT_CTR, OUTPUT);
+    digitalWrite(D_EN_CTR, LOW);
+    digitalWrite(D_BOOT_CTR, LOW);
+
     Serial.begin(115200);
     delay(1500);
     Serial.println();
@@ -61,8 +66,8 @@ void setup() {
     switch (s) {
       case BootState::BOOT:
         Serial.println("[BOOT] Entered boot mode.");
+        display_init();
         displayBootMenu();
-        // Qui in futuro: init display + menu
         break;
     
       case BootState::START_APP:
@@ -73,11 +78,13 @@ void setup() {
     
       case BootState::ERROR:
         Serial.println("[BOOT] Error state, stay in Boot.");
+        display_init();
         break;
     
       default:
         Serial.println("[BOOT] Unexpected state. Force boot menu");
         setBootState(BootState::BOOT);
+        display_init();
         displayBootMenu();
         break;
     }
